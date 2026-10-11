@@ -26,7 +26,8 @@ class PaymentProcessor:
 
         self.payments[payment_id] = {
             "user": user,
-            "amount": amount
+            "amount": amount,
+            "refunded": 0
         }
 
 
