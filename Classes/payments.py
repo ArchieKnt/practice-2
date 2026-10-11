@@ -30,26 +30,40 @@ class PaymentProcessor:
             "refunded": 0
         }
 
-
     def refund(self, payment_id, refund_id, amount):
+        # Check duplicate refund requests
+        if refund_id in self.refunds:
+            previous = self.refunds[refund_id]
+
+            if previous == (payment_id, amount):
+                return False
+
+            raise ValueError("Refund ID already used")
+
+        # Validate inputs
         if amount <= 0:
             raise ValueError("Invalid amount")
 
-        if refund_id in self.refunds:
-            raise ValueError("Duplicate refund")
+        if payment_id not in self.payments:
+            raise KeyError("Unknown payment")
 
-        payment = self.payments.get(payment_id)
-        if not payment:
-            raise ValueError("Payment not found")
+        payment = self.payments[payment_id]
 
-        if amount > payment["amount"]:
-            raise ValueError("Refund amount exceeds payment amount")
+        remaining = (
+            payment["amount"] - payment["refunded"]
+        )
+
+        if amount > remaining:
+            raise ValueError("Refund exceeds payment")
+
+        # Update state
+        payment["refunded"] += amount
 
         user = payment["user"]
         self.balances[user] += amount
 
-        self.refunds[refund_id] = {
-            "payment_id": payment_id,
-            "user": user,
-            "amount": amount
-        }
+        self.refunds[refund_id] = (payment_id, amount)
+
+        return True
+
+        
